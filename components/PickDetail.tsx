@@ -1,21 +1,6 @@
 import Link from "next/link";
 import type { PickRow } from "@/lib/types";
-
-function formatKickoff(iso: string) {
-  try {
-    const d = new Date(iso);
-    return new Intl.DateTimeFormat("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      timeZoneName: "short",
-    }).format(d);
-  } catch {
-    return iso;
-  }
-}
+import { KickoffLocal } from "./KickoffLocal";
 
 type Props = {
   pick: PickRow;
@@ -52,7 +37,9 @@ export function PickDetail({ pick, locked }: Props) {
         <dl className="mt-6 grid gap-3 text-sm sm:grid-cols-2">
           <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-3">
             <dt className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Kickoff</dt>
-            <dd className="mt-1 font-medium text-[var(--fg)]">{formatKickoff(pick.kickoff_at)}</dd>
+            <dd className="mt-1 font-medium text-[var(--fg)]">
+              <KickoffLocal iso={pick.kickoff_at} className="text-[var(--fg)]" />
+            </dd>
           </div>
           <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-3">
             <dt className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Sportsbook</dt>

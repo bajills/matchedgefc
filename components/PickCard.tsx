@@ -1,21 +1,6 @@
 import Link from "next/link";
 import type { PickRow } from "@/lib/types";
-
-export function formatPickKickoff(iso: string) {
-  try {
-    const d = new Date(iso);
-    return new Intl.DateTimeFormat("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      timeZoneName: "short",
-    }).format(d);
-  } catch {
-    return iso;
-  }
-}
+import { KickoffLocal } from "./KickoffLocal";
 
 type Props = {
   pick: PickRow;
@@ -82,9 +67,10 @@ export function PickCard({ pick, locked, prominent }: Props) {
               {pick.sportsbook}
             </span>
           </div>
-          <p className={`tabular-nums text-[var(--muted)] ${isProm ? "text-base" : "text-sm"}`}>
-            {formatPickKickoff(pick.kickoff_at)}
-          </p>
+          <KickoffLocal
+            iso={pick.kickoff_at}
+            className={`tabular-nums text-[var(--muted)] ${isProm ? "text-base" : "text-sm"}`}
+          />
         </div>
       </div>
     </Link>
