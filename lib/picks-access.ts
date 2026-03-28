@@ -1,5 +1,10 @@
 import type { PickRow } from "./types";
 
+/** First N `is_free` picks in kickoff order are unlocked on the marketing page. */
+export const FREE_PICKS_VISIBLE = 2;
+/** Blurred preview cards for non-members (after free picks). */
+export const LOCKED_PREVIEW_COUNT = 3;
+
 export function kickoffMs(p: PickRow): number {
   const t = Date.parse(p.kickoff_at || "");
   return Number.isFinite(t) ? t : 0;

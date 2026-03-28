@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import type { PickRow } from "@/lib/types";
 import { formatDateGroupHeader, groupPicksByLocalDate } from "@/lib/picks-grouping";
-import { computeUnlockedIds, kickoffMs } from "@/lib/picks-access";
+import { computeUnlockedIds, kickoffMs, LOCKED_PREVIEW_COUNT } from "@/lib/picks-access";
 import { PickCard } from "./PickCard";
 
 const FILTERS = [
@@ -30,15 +30,16 @@ export function PicksSection({ picks }: Props) {
     [filtered],
   );
 
-  const dateGroups = useMemo(() => groupPicksByLocalDate(sorted), [sorted]);
-
-  const { unlockedIds, lockedCount } = useMemo(() => {
-    const unlocked = computeUnlockedIds(sorted);
-    return {
-      unlockedIds: unlocked,
-      lockedCount: sorted.length - unlocked.size,
-    };
+  const { freePicks, lockedPreview, paywalledCount } = useMemo(() => {
+    const unlockedIds = computeUnlockedIds(sorted);
+    const free = sorted.filter((p) => unlockedIds.has(p.id));
+    const lockedRest = sorted.filter((p) => !unlockedIds.has(p.id));
+    const preview = lockedRest.slice(0, LOCKED_PREVIEW_COUNT);
+    const hidden = Math.max(0, lockedRest.length - preview.length);
+    return { freePicks: free, lockedPreview: preview, paywalledCount: hidden };
   }, [sorted]);
+
+  const lockedDateGroups = useMemo(() => groupPicksByLocalDate(lockedPreview), [lockedPreview]);
 
   return (
     <section id="picks" className="scroll-mt-20 px-4 py-16">
@@ -79,35 +80,68 @@ export function PicksSection({ picks }: Props) {
 
         {sport === "soccer" && sorted.length > 0 && (
           <>
-            <div className="mt-10 flex flex-col gap-10">
-              {dateGroups.map(({ dateKey, picks: dayPicks }) => (
-                <div key={dateKey}>
-                  <h3 className="mb-4 border-b border-[var(--border)] pb-2 font-heading text-lg font-semibold tracking-wide text-[var(--fg)]">
-                    {formatDateGroupHeader(dateKey)}
-                  </h3>
-                  <ul className="flex flex-col gap-4">
-                    {dayPicks.map((pick) => (
-                      <li key={pick.id}>
-                        <PickCard pick={pick} locked={!unlockedIds.has(pick.id)} />
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
+            {/* Free picks — flat list, kickoff order (no date grouping) */}
+            {freePicks.length > 0 && (
+              <div className="mt-10">
+                <h3 className="font-heading text-xl font-bold text-[var(--fg)] md:text-2xl">Free Picks</h3>
+                <ul className="mt-6 flex flex-col gap-4">
+                  {freePicks.map((pick) => (
+                    <li key={pick.id}>
+                      <PickCard pick={pick} locked={false} prominent />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-            {lockedCount > 0 && (
-              <div className="mt-10 rounded-lg border border-edge/40 bg-edge/5 px-4 py-4 text-center">
-                <p className="font-heading text-sm font-semibold uppercase tracking-wide text-[var(--fg)]">
-                  {lockedCount} more {lockedCount === 1 ? "pick" : "picks"} locked today — unlock with Edge
-                  $15/mo
+            {/* Divider + Edge paywall preview */}
+            {lockedPreview.length > 0 && (
+              <div className={freePicks.length > 0 ? "mt-12" : "mt-10"}>
+                {freePicks.length > 0 && (
+                  <div
+                    className="mb-10 border-t border-[var(--border)]"
+                    role="separator"
+                    aria-hidden
+                  />
+                )}
+                <h3 className="font-heading text-xl font-bold text-[var(--fg)] md:text-2xl">
+                  Edge Members Only
+                </h3>
+                <p className="mt-1 text-sm text-[var(--muted)]">
+                  Next {LOCKED_PREVIEW_COUNT} picks on the slate — unlock for full analysis and every pick.
                 </p>
-                <p className="mt-1 text-xs text-[var(--muted)]">
-                  Edge membership — full card, reasoning, line alerts, and early access to new sports.
+                <div className="mt-6 flex flex-col gap-8">
+                  {lockedDateGroups.map(({ dateKey, picks: dayPicks }) => (
+                    <div key={`locked-${dateKey}`}>
+                      <h4 className="mb-4 border-b border-[var(--border)] pb-2 font-heading text-base font-semibold tracking-wide text-[var(--fg)]">
+                        {formatDateGroupHeader(dateKey)}
+                      </h4>
+                      <ul className="flex flex-col gap-4">
+                        {dayPicks.map((pick) => (
+                          <li key={pick.id}>
+                            <PickCard pick={pick} locked />
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Paywalled remainder */}
+            {paywalledCount > 0 && (
+              <div className="mt-10 rounded-xl border border-edge/40 bg-edge/5 px-5 py-6 text-center">
+                <p className="font-heading text-base font-semibold text-[var(--fg)] md:text-lg">
+                  {paywalledCount} more {paywalledCount === 1 ? "pick" : "picks"} available to Edge members —
+                  unlock for $9/mo
+                </p>
+                <p className="mt-2 text-sm text-[var(--muted)]">
+                  Full reasoning, line movement, and every pick on the slate — not shown on the free page.
                 </p>
                 <a
                   href="#pricing"
-                  className="mt-3 inline-block text-sm font-semibold text-edge underline-offset-2 hover:underline"
+                  className="mt-4 inline-block text-sm font-semibold text-edge underline-offset-2 hover:underline"
                 >
                   View pricing
                 </a>
