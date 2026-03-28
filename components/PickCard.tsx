@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { PickRow } from "@/lib/types";
 
 function formatKickoff(iso: string) {
@@ -23,8 +24,9 @@ type Props = {
 
 export function PickCard({ pick, locked }: Props) {
   return (
-    <div
-      className={`relative overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] p-5 ${
+    <Link
+      href={`/picks/${pick.id}`}
+      className={`group relative block overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] p-5 outline-none transition hover:border-edge/45 hover:shadow-md focus-visible:ring-2 focus-visible:ring-edge/50 ${
         locked ? "select-none" : ""
       }`}
     >
@@ -59,6 +61,6 @@ export function PickCard({ pick, locked }: Props) {
           </p>
         )}
       </div>
-    </div>
+    </Link>
   );
 }

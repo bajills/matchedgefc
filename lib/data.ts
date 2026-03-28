@@ -57,6 +57,21 @@ export async function getPicks(): Promise<PickRow[]> {
   return data.map(mapPickRow);
 }
 
+/** Single pick by primary key — `null` if missing or unconfigured. */
+export async function getPickById(id: string): Promise<PickRow | null> {
+  const supabase = createServerClient();
+  if (!supabase || !id) {
+    return null;
+  }
+
+  const q = await supabase.from("picks").select("*").eq("id", id).maybeSingle();
+
+  if (q.error || q.data == null) {
+    return null;
+  }
+  return mapPickRow(q.data as Record<string, unknown>);
+}
+
 /** Win-loss: Supabase only — zeros until you log real results in sport_records. */
 export async function getSportRecords(): Promise<SportRecordRow[]> {
   const supabase = createServerClient();
