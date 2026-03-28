@@ -6,10 +6,10 @@ export function kickoffMs(p: PickRow): number {
 }
 
 /**
- * In kickoff order, the first three picks with `is_free === true` are treated as unlocked for display.
+ * In kickoff order, the first two picks with `is_free === true` are treated as unlocked for display.
  */
 export function computeUnlockedIds(sorted: PickRow[]): Set<string> {
-  let slots = 3;
+  let slots = 2;
   const ids = new Set<string>();
   for (const p of sorted) {
     if (p.is_free === true && slots > 0) {

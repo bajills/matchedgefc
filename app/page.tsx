@@ -7,6 +7,9 @@ import { RecordSection } from "@/components/RecordSection";
 import { StatsBar } from "@/components/StatsBar";
 import { getPicks, getSportRecords } from "@/lib/data";
 
+/** Supabase picks/records must be fresh on every visit — no static/ISR cache. */
+export const revalidate = 0;
+
 export default async function HomePage() {
   const [picks, records] = await Promise.all([getPicks(), getSportRecords()]);
 

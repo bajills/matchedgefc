@@ -6,6 +6,9 @@ import { PickDetail } from "@/components/PickDetail";
 import { getPickById, getPicks } from "@/lib/data";
 import { isPickUnlocked } from "@/lib/picks-access";
 
+/** Pick detail must reflect DB updates immediately — no static/ISR cache. */
+export const revalidate = 0;
+
 type Props = { params: { id: string } };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
