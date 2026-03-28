@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EmailSignup } from "./EmailSignup";
 
 const disclaimer = `MatchEdge provides sports research and analysis for informational and entertainment purposes only. Nothing published on this site constitutes financial, legal, or gambling advice. All picks and analysis reflect research-based opinions and do not guarantee outcomes. Sports betting involves risk — never bet more than you can afford to lose. MatchEdge is not a licensed sportsbook and does not accept wagers. We may earn affiliate commissions when you sign up with sportsbook partners through links on this site. Results and win rates shown reflect historical picks performance and are not a guarantee of future results. By accessing MatchEdge content or subscribing to Edge membership, you confirm you are of legal gambling age in your jurisdiction. If you or someone you know has a gambling problem, call 1-800-GAMBLER or visit ncpgambling.org.`;
 
@@ -6,12 +7,13 @@ export function Footer() {
   return (
     <footer className="border-t border-[var(--border)] bg-navy-900 px-4 py-12 text-[var(--muted)] dark:bg-navy-950">
       <div className="mx-auto max-w-5xl">
-        <div className="flex flex-col gap-10 md:flex-row md:justify-between">
+        <div className="flex flex-col gap-10 md:flex-row md:flex-wrap md:justify-between md:gap-x-8">
           <div>
             <p className="font-heading text-xl font-bold text-edge">MatchEdge FC</p>
             <p className="mt-2 max-w-xs text-sm">Data-forward matchday research for serious bettors.</p>
           </div>
-          <nav className="flex flex-col gap-2 text-sm">
+          <EmailSignup variant="footer" />
+          <nav className="flex flex-col gap-2 text-sm md:min-w-[140px]">
             <Link href="#picks" className="hover:text-edge">
               Picks
             </Link>

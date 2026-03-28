@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { PickRow } from "@/lib/types";
 import { formatDateGroupHeader, groupPicksByLocalDate } from "@/lib/picks-grouping";
 import { computeUnlockedIds, kickoffMs, LOCKED_PREVIEW_COUNT } from "@/lib/picks-access";
+import { EmailSignup } from "./EmailSignup";
 import { PickCard } from "./PickCard";
 
 const FILTERS = [
@@ -148,6 +149,14 @@ export function PicksSection({ picks }: Props) {
               </div>
             )}
           </>
+        )}
+
+        {sport === "soccer" && (
+          <div
+            className={`border-t border-[var(--border)] pt-10 ${sorted.length > 0 ? "mt-14" : "mt-10"}`}
+          >
+            <EmailSignup variant="inline" />
+          </div>
         )}
       </div>
     </section>

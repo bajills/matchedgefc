@@ -7,18 +7,35 @@ function mapPickRow(row: Record<string, unknown>): PickRow {
     (typeof row.kickoff === "string" && row.kickoff) ||
     (typeof row.kickoff_at === "string" && row.kickoff_at) ||
     "";
+  const odds =
+    row.odds_display != null && String(row.odds_display).trim() !== ""
+      ? String(row.odds_display)
+      : String(row.odds ?? "");
+  const opening =
+    row.opening_odds != null && String(row.opening_odds).trim() !== ""
+      ? String(row.opening_odds)
+      : odds;
+
+  let confidence: number | null = null;
+  if (typeof row.confidence === "number" && row.confidence >= 1 && row.confidence <= 3) {
+    confidence = row.confidence;
+  }
+
   return {
     id: String(row.id ?? ""),
     competition: String(row.competition ?? ""),
     match_name: String(row.match_name ?? row.match ?? ""),
     bet_type: String(row.bet_type ?? ""),
-    odds_display: String(row.odds_display ?? row.odds ?? ""),
+    odds_display: odds,
+    opening_odds: opening,
     sportsbook: String(row.sportsbook ?? ""),
     kickoff_at: kickoff,
     sport: String(row.sport ?? "soccer"),
     sort_order: typeof row.sort_order === "number" ? row.sort_order : undefined,
     reasoning: row.reasoning == null ? null : String(row.reasoning),
     result: row.result == null ? null : String(row.result),
+    final_score: row.final_score == null ? null : String(row.final_score),
+    confidence,
     is_free:
       typeof row.is_free === "boolean"
         ? row.is_free
