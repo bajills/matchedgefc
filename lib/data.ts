@@ -28,36 +28,30 @@ function mapPickRow(row: Record<string, unknown>): PickRow {
   };
 }
 
-/** Picks: Supabase only — empty array if unconfigured, error, or no rows. */
+/** Picks: Supabase only — all rows, kickoff order; empty if unconfigured, error, or no rows. */
 export async function getPicks(): Promise<PickRow[]> {
   const supabase = createServerClient();
   if (!supabase) {
     return [];
   }
-  const nowIso = new Date().toISOString();
 
   let data: Record<string, unknown>[] | null = null;
   let error: { message?: string } | null = null;
 
-  const primary = await supabase
-    .from("picks")
-    .select("*")
-    .gte("kickoff", nowIso)
-    .order("kickoff", { ascending: true });
+  const primary = await supabase.from("picks").select("*").order("kickoff", { ascending: true });
 
   if (!primary.error) {
     data = primary.data as Record<string, unknown>[] | null;
   } else {
-    const legacy = await supabase
-      .from("picks")
-      .select("*")
-      .gte("kickoff_at", nowIso)
-      .order("kickoff_at", { ascending: true });
+    const legacy = await supabase.from("picks").select("*").order("kickoff_at", { ascending: true });
     error = legacy.error;
     data = legacy.data as Record<string, unknown>[] | null;
   }
 
-  if (error || !data?.length) {
+  if (error) {
+    return [];
+  }
+  if (!data?.length) {
     return [];
   }
   return data.map(mapPickRow);
