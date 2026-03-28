@@ -8,6 +8,9 @@ export type PickRow = {
   kickoff_at: string;
   sport: string;
   sort_order?: number;
+  reasoning?: string | null;
+  result?: string | null;
+  is_free?: boolean | null;
 };
 
 export type SportRecordRow = {

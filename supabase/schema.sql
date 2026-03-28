@@ -11,6 +11,9 @@ create table if not exists public.picks (
   kickoff_at timestamptz not null,
   sport text not null default 'soccer',
   sort_order int not null default 0,
+  reasoning text,
+  result text not null default 'pending',
+  is_free boolean not null default true,
   created_at timestamptz not null default now()
 );
 
@@ -29,6 +32,8 @@ alter table public.sport_records enable row level security;
 
 drop policy if exists "Allow public read picks" on public.picks;
 create policy "Allow public read picks" on public.picks for select using (true);
+
+-- Inserts from backend scripts (service role key) bypass RLS. Do not expose service_role in browsers.
 
 drop policy if exists "Allow public read sport_records" on public.sport_records;
 create policy "Allow public read sport_records" on public.sport_records for select using (true);

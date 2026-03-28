@@ -53,6 +53,11 @@ export function PickCard({ pick, locked }: Props) {
           </div>
         </div>
         <p className="mt-3 text-xs text-[var(--muted)]">Kickoff · {formatKickoff(pick.kickoff_at)}</p>
+        {pick.reasoning && !locked && (
+          <p className="mt-3 border-t border-[var(--border)] pt-3 text-xs leading-relaxed text-[var(--muted)]">
+            {pick.reasoning}
+          </p>
+        )}
       </div>
     </div>
   );
