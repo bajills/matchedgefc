@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { PickRow } from "@/lib/types";
+import { formatDateGroupHeader, groupPicksByLocalDate } from "@/lib/picks-grouping";
 import { computeUnlockedIds, kickoffMs } from "@/lib/picks-access";
 import { PickCard } from "./PickCard";
 
@@ -18,7 +19,9 @@ export function PicksSection({ picks }: Props) {
   const [sport, setSport] = useState("soccer");
 
   const filtered = useMemo(() => {
-    if (sport !== "soccer") return [];
+    if (sport !== "soccer") {
+      return [];
+    }
     return picks.filter((p) => p.sport === "soccer");
   }, [picks, sport]);
 
@@ -27,24 +30,20 @@ export function PicksSection({ picks }: Props) {
     [filtered],
   );
 
-  const { unlockedIds, freeVisibleCount, lockedCount } = useMemo(() => {
+  const dateGroups = useMemo(() => groupPicksByLocalDate(sorted), [sorted]);
+
+  const { unlockedIds, lockedCount } = useMemo(() => {
     const unlocked = computeUnlockedIds(sorted);
     return {
       unlockedIds: unlocked,
-      freeVisibleCount: unlocked.size,
       lockedCount: sorted.length - unlocked.size,
     };
   }, [sorted]);
 
   return (
     <section id="picks" className="scroll-mt-20 px-4 py-16">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-3xl">
         <h2 className="font-heading text-3xl font-bold text-[var(--fg)] md:text-4xl">Today&apos;s Picks</h2>
-        {sport === "soccer" && sorted.length > 0 && (
-          <p className="mt-2 text-sm font-medium text-[var(--fg)]">
-            {freeVisibleCount} free {freeVisibleCount === 1 ? "pick" : "picks"} · {lockedCount} locked
-          </p>
-        )}
         <p className="mt-2 text-sm text-[var(--muted)]">Curated from our research pipeline. Updated each matchday.</p>
 
         <div className="mt-8 flex flex-wrap gap-2">
@@ -80,18 +79,25 @@ export function PicksSection({ picks }: Props) {
 
         {sport === "soccer" && sorted.length > 0 && (
           <>
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {sorted.map((pick) => (
-                <PickCard
-                  key={pick.id}
-                  pick={pick}
-                  locked={!unlockedIds.has(pick.id)}
-                />
+            <div className="mt-10 flex flex-col gap-10">
+              {dateGroups.map(({ dateKey, picks: dayPicks }) => (
+                <div key={dateKey}>
+                  <h3 className="mb-4 border-b border-[var(--border)] pb-2 font-heading text-lg font-semibold tracking-wide text-[var(--fg)]">
+                    {formatDateGroupHeader(dateKey)}
+                  </h3>
+                  <ul className="flex flex-col gap-4">
+                    {dayPicks.map((pick) => (
+                      <li key={pick.id}>
+                        <PickCard pick={pick} locked={!unlockedIds.has(pick.id)} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
             </div>
 
             {lockedCount > 0 && (
-              <div className="mt-8 rounded-lg border border-edge/40 bg-edge/5 px-4 py-4 text-center">
+              <div className="mt-10 rounded-lg border border-edge/40 bg-edge/5 px-4 py-4 text-center">
                 <p className="font-heading text-sm font-semibold uppercase tracking-wide text-[var(--fg)]">
                   {lockedCount} more {lockedCount === 1 ? "pick" : "picks"} locked today — unlock with Edge
                   $15/mo

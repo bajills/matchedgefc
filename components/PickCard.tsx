@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { PickRow } from "@/lib/types";
 
-function formatKickoff(iso: string) {
+export function formatPickKickoff(iso: string) {
   try {
     const d = new Date(iso);
     return new Intl.DateTimeFormat("en-US", {
@@ -23,15 +23,19 @@ type Props = {
 };
 
 export function PickCard({ pick, locked }: Props) {
+  const isLocked = Boolean(locked);
+
   return (
     <Link
       href={`/picks/${pick.id}`}
-      className={`group relative block overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] p-5 outline-none transition hover:border-edge/45 hover:shadow-md focus-visible:ring-2 focus-visible:ring-edge/50 ${
-        locked ? "select-none" : ""
-      }`}
+      className={`group relative block w-full overflow-hidden rounded-xl border p-5 outline-none transition focus-visible:ring-2 focus-visible:ring-edge/50 ${
+        isLocked
+          ? "border-navy-600/50 bg-navy-800/35 dark:border-navy-500/40 dark:bg-navy-900/55"
+          : "border-[var(--border)] bg-white shadow-sm dark:bg-[var(--card)]"
+      } ${isLocked ? "select-none" : "hover:border-edge/40 hover:shadow-md"}`}
     >
-      {locked && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-navy-900/75 backdrop-blur-[2px]">
+      {isLocked && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-navy-900/70 backdrop-blur-[3px] dark:bg-navy-950/80">
           <span className="text-3xl" aria-hidden>
             🔒
           </span>
@@ -40,21 +44,19 @@ export function PickCard({ pick, locked }: Props) {
           </span>
         </div>
       )}
-      <div className={locked ? "blur-sm" : ""}>
-        <p className="text-xs font-semibold uppercase tracking-wider text-edge">{pick.competition}</p>
-        <p className="mt-1 font-heading text-lg font-semibold text-[var(--fg)]">{pick.match_name}</p>
-        <p className="mt-2 text-sm text-[var(--muted)]">{pick.bet_type}</p>
-        <div className="mt-4 flex flex-wrap items-end justify-between gap-2 border-t border-[var(--border)] pt-4">
-          <div>
-            <span className="text-xs text-[var(--muted)]">Odds</span>
-            <p className="font-heading text-xl font-bold text-[var(--fg)]">{pick.odds_display}</p>
+      <div className={`space-y-3 ${isLocked ? "blur-[3px]" : ""}`}>
+        <span className="inline-flex max-w-full rounded-full bg-edge/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-edge">
+          {pick.competition}
+        </span>
+        <h3 className="font-heading text-lg font-bold leading-snug text-[var(--fg)]">{pick.match_name}</h3>
+        <p className="text-sm text-[var(--muted)]">{pick.bet_type}</p>
+        <div className="flex flex-col gap-2 border-t border-[var(--border)] pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-8 sm:gap-y-2">
+          <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+            <span className="font-heading text-xl font-bold text-edge">{pick.odds_display}</span>
+            <span className="text-sm font-medium text-[var(--fg)]">{pick.sportsbook}</span>
           </div>
-          <div className="text-right">
-            <span className="text-xs text-[var(--muted)]">Book</span>
-            <p className="text-sm font-medium text-[var(--fg)]">{pick.sportsbook}</p>
-          </div>
+          <p className="text-sm tabular-nums text-[var(--muted)]">{formatPickKickoff(pick.kickoff_at)}</p>
         </div>
-        <p className="mt-3 text-xs text-[var(--muted)]">Kickoff · {formatKickoff(pick.kickoff_at)}</p>
       </div>
     </Link>
   );
