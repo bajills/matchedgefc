@@ -3,7 +3,11 @@
 import { useMemo, useState } from "react";
 import type { PickRow } from "@/lib/types";
 import { formatDateGroupHeader, groupPicksByLocalDate } from "@/lib/picks-grouping";
-import { computeUnlockedIds, kickoffMs, LOCKED_PREVIEW_COUNT } from "@/lib/picks-access";
+import {
+  dedupePicksByMatchKickoffBet,
+  kickoffMs,
+  LOCKED_PREVIEW_COUNT,
+} from "@/lib/picks-access";
 import { EmailSignup } from "./EmailSignup";
 import { PickCard } from "./PickCard";
 
@@ -26,17 +30,16 @@ export function PicksSection({ picks }: Props) {
     return picks.filter((p) => p.sport === "soccer");
   }, [picks, sport]);
 
-  const sorted = useMemo(
-    () => [...filtered].sort((a, b) => kickoffMs(a) - kickoffMs(b)),
-    [filtered],
-  );
+  const sorted = useMemo(() => {
+    const ordered = [...filtered].sort((a, b) => kickoffMs(a) - kickoffMs(b));
+    return dedupePicksByMatchKickoffBet(ordered);
+  }, [filtered]);
 
   const { freePicks, lockedPreview, paywalledCount } = useMemo(() => {
-    const unlockedIds = computeUnlockedIds(sorted);
-    const free = sorted.filter((p) => unlockedIds.has(p.id));
-    const lockedRest = sorted.filter((p) => !unlockedIds.has(p.id));
-    const preview = lockedRest.slice(0, LOCKED_PREVIEW_COUNT);
-    const hidden = Math.max(0, lockedRest.length - preview.length);
+    const free = sorted.filter((p) => p.is_free === true);
+    const lockedAll = sorted.filter((p) => p.is_free === false);
+    const preview = lockedAll.slice(0, LOCKED_PREVIEW_COUNT);
+    const hidden = Math.max(0, lockedAll.length - preview.length);
     return { freePicks: free, lockedPreview: preview, paywalledCount: hidden };
   }, [sorted]);
 

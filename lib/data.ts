@@ -2,7 +2,7 @@ import type { PickRow, SportRecordRow } from "./types";
 import { createServerClient } from "./supabase/server";
 
 /** Map Supabase row (legacy or current column names) to `PickRow` for UI components. */
-function mapPickRow(row: Record<string, unknown>): PickRow {
+export function mapPickRow(row: Record<string, unknown>): PickRow {
   const kickoff =
     (typeof row.kickoff === "string" && row.kickoff) ||
     (typeof row.kickoff_at === "string" && row.kickoff_at) ||

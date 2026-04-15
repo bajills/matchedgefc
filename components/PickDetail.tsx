@@ -3,6 +3,7 @@ import type { PickRow } from "@/lib/types";
 import { confidenceStars } from "@/lib/pickResultStyles";
 import { KickoffCountdown } from "./KickoffCountdown";
 import { KickoffLocal } from "./KickoffLocal";
+import { LiveScoreWidget } from "./LiveScoreWidget";
 import { OddsWithMovement } from "./OddsWithMovement";
 
 type Props = {
@@ -59,6 +60,8 @@ export function PickDetail({ pick, locked }: Props) {
       >
         <span aria-hidden>←</span> Back to Picks
       </Link>
+
+      <LiveScoreWidget pick={pick} />
 
       <header className="mt-8 border-b border-[var(--border)] pb-8">
         <ResultBanner pick={pick} />
