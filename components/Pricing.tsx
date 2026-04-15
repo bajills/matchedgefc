@@ -51,12 +51,17 @@ export function Pricing() {
           </div>
 
           <div className="rounded-xl border-2 border-edge bg-navy-900/50 p-8 dark:bg-navy-900/80">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-heading text-xl font-bold text-edge">Edge</h3>
-              <span className="rounded bg-edge/20 px-2 py-0.5 text-xs font-semibold text-edge">Popular</span>
+              <span className="rounded-full border border-edge/50 bg-edge/15 px-2.5 py-0.5 font-heading text-[10px] font-bold uppercase tracking-wide text-edge">
+                Founding Member Rate
+              </span>
             </div>
             <p className="mt-2 font-heading text-4xl font-bold text-[var(--fg)]">
-              $15<span className="text-lg font-normal text-[var(--muted)]">/mo</span>
+              $9<span className="text-lg font-normal text-[var(--muted)]">/mo</span>
+            </p>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              Locks in forever — rises to $15/mo after launch
             </p>
             <ul className="mt-6 space-y-3 text-sm text-[var(--muted)]">
               <li>✓ All picks + full reasoning</li>
@@ -72,6 +77,9 @@ export function Pricing() {
             >
               {loading ? "Redirecting…" : "Subscribe with Stripe"}
             </button>
+            <p className="mt-3 text-center text-xs font-medium text-[var(--muted)]">
+              Limited founding spots available
+            </p>
             {error && <p className="mt-3 text-center text-xs text-red-500">{error}</p>}
             <p className="mt-4 text-center text-[10px] text-[var(--muted)]">
               Secure checkout via Stripe. Cancel anytime.
