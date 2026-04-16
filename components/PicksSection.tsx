@@ -37,7 +37,7 @@ export function PicksSection({ picks }: Props) {
 
   const { freePicks, lockedPreview, paywalledCount } = useMemo(() => {
     const free = sorted.filter((p) => p.is_free === true);
-    const lockedAll = sorted.filter((p) => p.is_free === false);
+    const lockedAll = sorted.filter((p) => p.is_free !== true);
     const preview = lockedAll.slice(0, LOCKED_PREVIEW_COUNT);
     const hidden = Math.max(0, lockedAll.length - preview.length);
     return { freePicks: free, lockedPreview: preview, paywalledCount: hidden };

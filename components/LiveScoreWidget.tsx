@@ -52,7 +52,7 @@ function formatKickoffCountdown(ms: number): string {
 export function LiveScoreWidget({ pick }: { pick: PickRow }) {
   const router = useRouter();
   const [live, setLive] = useState<LiveJson | null>(null);
-  const [tick, setTick] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
 
   const kickoffMs = useMemo(() => Date.parse(pick.kickoff_at), [pick.kickoff_at]);
   const resultLower = (pick.result || "pending").toLowerCase();
@@ -80,7 +80,7 @@ export function LiveScoreWidget({ pick }: { pick: PickRow }) {
     if (pickGraded || withinPollWindow) {
       return;
     }
-    const id = setInterval(() => setTick((x) => x + 1), 1000);
+    const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, [pickGraded, withinPollWindow]);
 
@@ -102,8 +102,9 @@ export function LiveScoreWidget({ pick }: { pick: PickRow }) {
     return () => clearInterval(id);
   }, [pickGraded, liveGraded, live?.pollApi, withinPollWindow, pick.sport, pollEndpoint]);
 
-  void tick;
-  const preKickoffMs = Number.isFinite(kickoffMs) ? Math.max(0, kickoffMs - Date.now()) : 0;
+  const preKickoffMs = useMemo(() => {
+    return Number.isFinite(kickoffMs) ? Math.max(0, kickoffMs - now) : 0;
+  }, [kickoffMs, now]);
 
   const homeName =
     live?.homeName ??
