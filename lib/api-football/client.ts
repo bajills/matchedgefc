@@ -116,3 +116,21 @@ export async function fetchFixturesForPickWindow(kickoffUtcDate: string): Promis
   ]);
   return { live, byDate };
 }
+
+/** Generic cached GET — uses same 60s cache + daily budget as other fixture calls. */
+export async function fetchApiFootballCached(
+  path: string,
+  params: Record<string, string>,
+  cacheKey: string,
+): Promise<unknown> {
+  const hit = getCached(cacheKey);
+  if (hit != null) {
+    return hit;
+  }
+  if (!consumeApiFootballRequest()) {
+    return { response: [], errors: [] };
+  }
+  const json = await fetchJson(path, params);
+  setCached(cacheKey, json);
+  return json;
+}

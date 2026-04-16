@@ -5,14 +5,66 @@
 export type ApiFixture = {
   fixture: {
     id: number;
+    date?: string;
     status: { short: string; elapsed?: number | null };
   };
+  league?: { id: number; season: number; name?: string };
   goals: { home: number | null; away: number | null };
   teams: {
-    home: { name: string; logo?: string };
-    away: { name: string; logo?: string };
+    home: { id?: number; name: string; logo?: string };
+    away: { id?: number; name: string; logo?: string };
   };
 };
+
+/** Resolved fixture with API-Football team ids (required for H2H / injuries / stats). */
+export type MatchedFixture = ApiFixture & {
+  teams: {
+    home: { id: number; name: string; logo?: string };
+    away: { id: number; name: string; logo?: string };
+  };
+  league: { id: number; season: number; name?: string };
+};
+
+function inferSeasonUtc(kickoffIso: string): number {
+  const d = new Date(kickoffIso);
+  if (Number.isNaN(d.getTime())) {
+    return new Date().getUTCFullYear();
+  }
+  const y = d.getUTCFullYear();
+  const m = d.getUTCMonth() + 1;
+  return m >= 7 ? y : y - 1;
+}
+
+/** Resolve API fixture row for enrichment; `kickoffIso` fills `season` when missing from the payload. */
+export function toMatchedFixture(f: ApiFixture | null, kickoffIso?: string): MatchedFixture | null {
+  if (!f) {
+    return null;
+  }
+  const hid = f.teams?.home?.id;
+  const aid = f.teams?.away?.id;
+  const lid = f.league?.id;
+  let season = f.league?.season;
+  const fid = f.fixture?.id;
+  if (hid == null || aid == null || lid == null || fid == null) {
+    return null;
+  }
+  if (season == null && kickoffIso) {
+    season = inferSeasonUtc(kickoffIso);
+  }
+  if (season == null) {
+    return null;
+  }
+  const leagueName = f.league?.name ?? "";
+  const merged: MatchedFixture = {
+    ...f,
+    league: { id: lid, season, name: leagueName },
+    teams: {
+      home: { id: hid, name: f.teams.home.name, logo: f.teams.home.logo },
+      away: { id: aid, name: f.teams.away.name, logo: f.teams.away.logo },
+    },
+  };
+  return merged;
+}
 
 function norm(s: string): string {
   return s
