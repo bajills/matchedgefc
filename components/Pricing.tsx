@@ -26,13 +26,17 @@ export function Pricing() {
   }
 
   return (
-    <section id="pricing" className="scroll-mt-20 px-4 py-16">
-      <div className="mx-auto max-w-5xl">
-        <h2 className="font-heading text-3xl font-bold text-[var(--fg)] md:text-4xl">Pricing</h2>
-        <p className="mt-2 text-sm text-[var(--muted)]">Start free. Upgrade when you want the full edge.</p>
+    <section id="pricing" className="scroll-mt-20 px-4 py-16 md:py-20 lg:py-24">
+      <div className="mx-auto max-w-[900px]">
+        <h2 className="text-center font-heading text-3xl font-bold text-[var(--fg)] md:text-4xl lg:text-[2.25rem]">
+          Pricing
+        </h2>
+        <p className="mt-2 text-center text-sm text-[var(--muted)] md:text-base">
+          Start free. Upgrade when you want the full edge.
+        </p>
 
-        <div className="mt-10 grid gap-6 md:grid-cols-2">
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8">
+        <div className="mt-12 grid gap-8 md:mt-14 md:grid-cols-2 md:gap-10 lg:gap-12">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 md:p-10">
             <h3 className="font-heading text-xl font-bold text-[var(--fg)]">Free</h3>
             <p className="mt-2 font-heading text-4xl font-bold text-[var(--fg)]">
               $0<span className="text-lg font-normal text-[var(--muted)]">/mo</span>
@@ -44,13 +48,13 @@ export function Pricing() {
             </ul>
             <a
               href="#picks"
-              className="mt-8 inline-flex w-full items-center justify-center rounded border border-[var(--border)] py-3 font-heading text-sm font-semibold uppercase tracking-wide text-[var(--fg)] hover:border-edge"
+              className="mt-8 inline-flex w-full items-center justify-center rounded border border-[var(--border)] py-3 font-heading text-sm font-semibold uppercase tracking-wide text-[var(--fg)] hover:border-edge md:mt-10"
             >
               Start Free
             </a>
           </div>
 
-          <div className="rounded-xl border-2 border-edge bg-navy-900/50 p-8 dark:bg-navy-900/80">
+          <div className="rounded-xl border-2 border-edge bg-navy-900/50 p-8 dark:bg-navy-900/80 md:p-10">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-heading text-xl font-bold text-edge">Edge</h3>
               <span className="rounded-full border border-edge/50 bg-edge/15 px-2.5 py-0.5 font-heading text-[10px] font-bold uppercase tracking-wide text-edge">
@@ -73,7 +77,7 @@ export function Pricing() {
               type="button"
               onClick={startCheckout}
               disabled={loading}
-              className="mt-8 inline-flex w-full items-center justify-center rounded border border-edge bg-edge py-3 font-heading text-sm font-semibold uppercase tracking-wide text-navy-900 shadow-edge hover:bg-edge-dim disabled:opacity-60"
+              className="mt-8 inline-flex w-full items-center justify-center rounded border border-edge bg-edge py-3 font-heading text-sm font-semibold uppercase tracking-wide text-navy-900 shadow-edge hover:bg-edge-dim disabled:opacity-60 md:mt-10"
             >
               {loading ? "Redirecting…" : "Subscribe with Stripe"}
             </button>

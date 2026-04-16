@@ -30,12 +30,13 @@ export default async function PickPage({ params }: Props) {
 
   const soccerPicks = allPicks.filter((p) => p.sport === "soccer");
   const locked = !isPickUnlocked(pick, soccerPicks);
+  const relatedPicks = soccerPicks.filter((p) => p.id !== pick.id);
 
   return (
     <>
       <Header />
       <main className="min-h-[60vh]">
-        <PickDetail pick={pick} locked={locked} />
+        <PickDetail pick={pick} locked={locked} relatedPicks={relatedPicks} />
       </main>
       <Footer />
     </>

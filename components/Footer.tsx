@@ -5,33 +5,41 @@ const disclaimer = `MatchEdge provides sports research and analysis for informat
 
 export function Footer() {
   return (
-    <footer className="border-t border-[var(--border)] bg-navy-900 px-4 py-12 text-[var(--muted)] dark:bg-navy-950">
-      <div className="mx-auto max-w-5xl">
-        <div className="flex flex-col gap-10 md:flex-row md:flex-wrap md:justify-between md:gap-x-8">
-          <div>
+    <footer className="border-t border-[var(--border)] bg-navy-900 px-4 py-12 text-[var(--muted)] dark:bg-navy-950 lg:py-16">
+      <div className="mx-auto max-w-6xl">
+        <div className="grid gap-10 md:gap-12 lg:grid-cols-3 lg:items-start lg:gap-8">
+          <div className="text-center lg:text-left">
             <p className="font-heading text-xl font-bold text-edge">MatchEdge FC</p>
-            <p className="mt-2 max-w-xs text-sm">Data-forward matchday research for serious bettors.</p>
+            <p className="mt-2 max-w-xs text-sm lg:mx-0">
+              Data-forward matchday research for serious bettors.
+            </p>
           </div>
-          <EmailSignup variant="footer" />
-          <nav className="flex flex-col gap-2 text-sm md:min-w-[140px]">
-            <Link href="#picks" className="hover:text-edge">
+          <nav className="flex flex-col items-center gap-3 text-sm lg:justify-self-center">
+            <Link href="/#picks" className="transition hover:text-edge">
               Picks
             </Link>
-            <Link href="#pricing" className="hover:text-edge">
+            <Link href="/#pricing" className="transition hover:text-edge">
               Pricing
             </Link>
+          </nav>
+          <div className="flex flex-col items-center gap-3 lg:items-end">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">Social</p>
             <a
               href="https://x.com/MatchEdgeFC"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-edge"
+              className="text-sm transition hover:text-edge"
             >
               @MatchEdgeFC on X
             </a>
-          </nav>
+          </div>
         </div>
 
-        <div className="mt-10 rounded-lg border border-navy-700 bg-navy-950/50 p-4 text-xs leading-relaxed">
+        <div className="mx-auto mt-10 max-w-xl lg:mt-12">
+          <EmailSignup variant="footer" />
+        </div>
+
+        <div className="mt-10 w-full rounded-lg border border-navy-700 bg-navy-950/50 p-4 text-xs leading-relaxed lg:mt-12">
           <p className="font-semibold text-[var(--fg)]">Disclaimer</p>
           <p className="mt-2 text-[var(--muted)]">{disclaimer}</p>
         </div>

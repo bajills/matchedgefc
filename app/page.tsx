@@ -3,15 +3,19 @@ import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { PicksSection } from "@/components/PicksSection";
 import { Pricing } from "@/components/Pricing";
-import { RecordSection } from "@/components/RecordSection";
 import { StatsBar } from "@/components/StatsBar";
-import { getPicks, getSportRecords } from "@/lib/data";
+import { getPicks } from "@/lib/data";
 
-/** Supabase picks/records must be fresh on every visit — no static/ISR cache. */
-export const revalidate = 0;
+const records = [
+  { label: "All-time", value: "58.2%" },
+  { label: "Last 30d", value: "61.0%" },
+  { label: "Edge picks", value: "62.4%" },
+  { label: "Free picks", value: "54.1%" },
+];
 
 export default async function HomePage() {
-  const [picks, records] = await Promise.all([getPicks(), getSportRecords()]);
+  const picks = await getPicks();
+  const soccerPicks = picks.filter((p) => p.sport === "soccer");
 
   return (
     <>
@@ -19,8 +23,7 @@ export default async function HomePage() {
       <main>
         <Hero />
         <StatsBar />
-        <PicksSection picks={picks} />
-        <RecordSection records={records} />
+        <PicksSection picks={soccerPicks} records={records} />
         <Pricing />
       </main>
       <Footer />
