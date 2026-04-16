@@ -2,165 +2,163 @@
 
 import { useMemo, useState } from "react";
 import type { PickRow } from "@/lib/types";
-import { formatDateGroupHeader, groupPicksByLocalDate } from "@/lib/picks-grouping";
-import {
-  dedupePicksByMatchKickoffBet,
-  kickoffMs,
-  LOCKED_PREVIEW_COUNT,
-} from "@/lib/picks-access";
-import { EmailSignup } from "./EmailSignup";
 import { PickCard } from "./PickCard";
+import { EmailSignup } from "./EmailSignup";
 
-const FILTERS = [
-  { key: "soccer", label: "Soccer", status: "active" as const },
-  { key: "nba", label: "NBA", status: "soon" as const },
-  { key: "nfl", label: "NFL", status: "soon" as const },
-  { key: "mlb", label: "MLB", status: "soon" as const },
-];
+type RecordEntry = { label: string; value: string };
 
-type Props = { picks: PickRow[] };
+type Props = {
+  picks: PickRow[];
+  records?: RecordEntry[];
+};
 
-export function PicksSection({ picks }: Props) {
-  const [sport, setSport] = useState("soccer");
+function RecordTrackerCompact({ records }: { records: RecordEntry[] }) {
+  return (
+    <div className="rounded-xl border border-navy-700/50 bg-navy-900/30 p-5">
+      <h3 className="mb-4 font-heading text-sm font-semibold uppercase tracking-wider text-edge">
+        Record tracker
+      </h3>
+      <div className="grid grid-cols-2 gap-3">
+        {records.map((r) => (
+          <div
+            key={r.label}
+            className="rounded-lg border border-navy-700/40 bg-navy-950/40 px-3 py-2 text-center"
+          >
+            <p className="font-heading text-lg font-bold text-white">{r.value}</p>
+            <p className="text-[10px] uppercase tracking-wide text-[var(--muted)]">{r.label}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-  const filtered = useMemo(() => {
-    if (sport !== "soccer") {
-      return [];
-    }
-    return picks.filter((p) => p.sport === "soccer");
-  }, [picks, sport]);
+function PicksSidebar({
+  gamesCount,
+  leaguesCount,
+  records,
+}: {
+  gamesCount: number;
+  leaguesCount: number;
+  records: RecordEntry[];
+}) {
+  return (
+    <aside className="space-y-8 lg:sticky lg:top-24">
+      <div className="rounded-xl border border-navy-700/50 bg-navy-900/30 p-5">
+        <h3 className="mb-2 font-heading text-sm font-semibold uppercase tracking-wider text-edge">
+          Today&apos;s slate
+        </h3>
+        <p className="text-sm text-[var(--muted)]">
+          <span className="font-semibold text-white">{gamesCount}</span>{" "}
+          {gamesCount === 1 ? "game" : "games"}
+          {" · "}
+          <span className="font-semibold text-white">{leaguesCount}</span>{" "}
+          {leaguesCount === 1 ? "league" : "leagues"}
+        </p>
+      </div>
+      <EmailSignup />
+      <div className="rounded-xl border border-edge/30 bg-gradient-to-br from-edge/10 to-transparent p-5">
+        <h3 className="mb-2 font-heading text-lg font-bold text-white">Get the full edge</h3>
+        <p className="mb-4 text-sm text-[var(--muted)]">
+          Unlock grades, full write-ups, and historical performance for every pick.
+        </p>
+        <a
+          href="#pricing"
+          className="inline-flex w-full items-center justify-center rounded-full bg-edge px-4 py-2.5 text-sm font-semibold text-navy-900 transition hover:bg-[#00e6b8]"
+        >
+          View Edge membership — $9/mo
+        </a>
+      </div>
+      {records.length > 0 ? <RecordTrackerCompact records={records} /> : null}
+    </aside>
+  );
+}
+
+export function PicksSection({ picks, records = [] }: Props) {
+  const [filter, setFilter] = useState<"all" | "edge">("all");
 
   const sorted = useMemo(() => {
-    const ordered = [...filtered].sort((a, b) => kickoffMs(a) - kickoffMs(b));
-    return dedupePicksByMatchKickoffBet(ordered);
-  }, [filtered]);
+    return [...picks].sort((a, b) => {
+      const ta = new Date(a.kickoff_at).getTime();
+      const tb = new Date(b.kickoff_at).getTime();
+      return ta - tb;
+    });
+  }, [picks]);
 
-  const { freePicks, lockedPreview, paywalledCount } = useMemo(() => {
-    const free = sorted.filter((p) => p.is_free === true);
-    const lockedAll = sorted.filter((p) => p.is_free !== true);
-    const preview = lockedAll.slice(0, LOCKED_PREVIEW_COUNT);
-    const hidden = Math.max(0, lockedAll.length - preview.length);
-    return { freePicks: free, lockedPreview: preview, paywalledCount: hidden };
-  }, [sorted]);
+  const filtered = useMemo(() => {
+    if (filter === "edge") return sorted.filter((p) => !p.is_free);
+    return sorted;
+  }, [sorted, filter]);
 
-  const lockedDateGroups = useMemo(() => groupPicksByLocalDate(lockedPreview), [lockedPreview]);
+  const slateGames = sorted.length;
+  const leagueSet = useMemo(
+    () => new Set(sorted.map((p) => p.competition).filter(Boolean)),
+    [sorted],
+  );
+  const slateLeagues = leagueSet.size;
 
   return (
-    <section id="picks" className="scroll-mt-20 px-4 py-16">
-      <div className="mx-auto max-w-3xl">
-        <h2 className="font-heading text-3xl font-bold text-[var(--fg)] md:text-4xl">Today&apos;s Picks</h2>
-        <p className="mt-2 text-sm text-[var(--muted)]">Curated from our research pipeline. Updated each matchday.</p>
-
-        <div className="mt-8 flex flex-wrap gap-2">
-          {FILTERS.map((f) => (
-            <button
-              key={f.key}
-              type="button"
-              disabled={f.status === "soon"}
-              onClick={() => setSport(f.key)}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-                sport === f.key
-                  ? "border-edge bg-edge/15 text-edge"
-                  : "border-[var(--border)] text-[var(--muted)] hover:border-edge/50"
-              } ${f.status === "soon" ? "cursor-not-allowed opacity-60" : ""}`}
-            >
-              {f.label}
-              {f.status === "soon" && (
-                <span className="ml-2 text-[10px] uppercase text-[var(--muted)]">soon</span>
-              )}
-            </button>
-          ))}
+    <section id="picks" className="scroll-mt-24 px-4 py-16 md:py-20 lg:py-24">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-10 text-center lg:mb-12 lg:text-left">
+          <h2 className="mb-3 font-heading text-2xl font-bold text-white md:text-3xl lg:text-4xl">
+            Today&apos;s picks
+          </h2>
+          <p className="mx-auto max-w-xl text-[var(--muted)] lg:mx-0">
+            Free picks listed below. Edge picks unlock full reasoning and model grades.
+          </p>
         </div>
 
-        {sport !== "soccer" && (
-          <p className="mt-10 text-center text-[var(--muted)]">Coming soon.</p>
-        )}
+        <div className="lg:grid lg:grid-cols-[minmax(0,65%)_minmax(0,35%)] lg:items-start lg:gap-10 xl:gap-12">
+          <div className="min-w-0">
+            <div className="mb-6 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+              <button
+                type="button"
+                onClick={() => setFilter("all")}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                  filter === "all"
+                    ? "bg-edge text-navy-900"
+                    : "bg-navy-800/50 text-[var(--muted)] hover:text-white"
+                }`}
+              >
+                All picks
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilter("edge")}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                  filter === "edge"
+                    ? "bg-edge text-navy-900"
+                    : "bg-navy-800/50 text-[var(--muted)] hover:text-white"
+                }`}
+              >
+                Edge only
+              </button>
+            </div>
 
-        {sport === "soccer" && sorted.length === 0 && (
-          <p className="mt-10 text-center text-[var(--muted)]">
-            No picks today — check back on matchday
-          </p>
-        )}
-
-        {sport === "soccer" && sorted.length > 0 && (
-          <>
-            {/* Free picks — flat list, kickoff order (no date grouping) */}
-            {freePicks.length > 0 && (
-              <div className="mt-10">
-                <h3 className="font-heading text-xl font-bold text-[var(--fg)] md:text-2xl">Free Picks</h3>
-                <ul className="mt-6 flex flex-col gap-4">
-                  {freePicks.map((pick) => (
-                    <li key={pick.id}>
-                      <PickCard pick={pick} locked={false} prominent />
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {filtered.length === 0 ? (
+              <p className="rounded-xl border border-navy-700/50 bg-navy-900/30 py-12 text-center text-[var(--muted)]">
+                No picks match this filter.
+              </p>
+            ) : (
+              <ul className="space-y-4">
+                {filtered.map((pick) => (
+                  <li key={pick.id}>
+                    <PickCard pick={pick} />
+                  </li>
+                ))}
+              </ul>
             )}
-
-            {/* Divider + Edge paywall preview */}
-            {lockedPreview.length > 0 && (
-              <div className={freePicks.length > 0 ? "mt-12" : "mt-10"}>
-                {freePicks.length > 0 && (
-                  <div
-                    className="mb-10 border-t border-[var(--border)]"
-                    role="separator"
-                    aria-hidden
-                  />
-                )}
-                <h3 className="font-heading text-xl font-bold text-[var(--fg)] md:text-2xl">
-                  Edge Members Only
-                </h3>
-                <p className="mt-1 text-sm text-[var(--muted)]">
-                  Next {LOCKED_PREVIEW_COUNT} picks on the slate — unlock for full analysis and every pick.
-                </p>
-                <div className="mt-6 flex flex-col gap-8">
-                  {lockedDateGroups.map(({ dateKey, picks: dayPicks }) => (
-                    <div key={`locked-${dateKey}`}>
-                      <h4 className="mb-4 border-b border-[var(--border)] pb-2 font-heading text-base font-semibold tracking-wide text-[var(--fg)]">
-                        {formatDateGroupHeader(dateKey)}
-                      </h4>
-                      <ul className="flex flex-col gap-4">
-                        {dayPicks.map((pick) => (
-                          <li key={pick.id}>
-                            <PickCard pick={pick} locked />
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Paywalled remainder */}
-            {paywalledCount > 0 && (
-              <div className="mt-10 rounded-xl border border-edge/40 bg-edge/5 px-5 py-6 text-center">
-                <p className="font-heading text-base font-semibold text-[var(--fg)] md:text-lg">
-                  {paywalledCount} more {paywalledCount === 1 ? "pick" : "picks"} available to Edge members —
-                  unlock for $9/mo
-                </p>
-                <p className="mt-2 text-sm text-[var(--muted)]">
-                  Full reasoning, line movement, and every pick on the slate — not shown on the free page.
-                </p>
-                <a
-                  href="#pricing"
-                  className="mt-4 inline-block text-sm font-semibold text-edge underline-offset-2 hover:underline"
-                >
-                  View pricing
-                </a>
-              </div>
-            )}
-          </>
-        )}
-
-        {sport === "soccer" && (
-          <div
-            className={`border-t border-[var(--border)] pt-10 ${sorted.length > 0 ? "mt-14" : "mt-10"}`}
-          >
-            <EmailSignup variant="inline" />
           </div>
-        )}
+
+          <div className="mt-12 lg:mt-0">
+            <PicksSidebar
+              gamesCount={slateGames}
+              leaguesCount={slateLeagues}
+              records={records}
+            />
+          </div>
+        </div>
       </div>
     </section>
   );
