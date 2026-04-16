@@ -1,5 +1,4 @@
 import Link from "next/link";
-import type { PickDetailApiPayload } from "@/lib/pick-detail-data";
 import type { PickRow } from "@/lib/types";
 import { confidenceStars } from "@/lib/pickResultStyles";
 import { KickoffCountdown } from "./KickoffCountdown";
@@ -10,7 +9,6 @@ import { PickDetailTabs } from "./PickDetailTabs";
 type Props = {
   pick: PickRow;
   locked: boolean;
-  detailApi: PickDetailApiPayload;
 };
 
 function ResultBanner({ pick }: { pick: PickRow }) {
@@ -41,7 +39,7 @@ function ResultBanner({ pick }: { pick: PickRow }) {
   return null;
 }
 
-export function PickDetail({ pick, locked, detailApi }: Props) {
+export function PickDetail({ pick, locked }: Props) {
   const stars = confidenceStars(pick.confidence);
 
   return (
@@ -83,7 +81,7 @@ export function PickDetail({ pick, locked, detailApi }: Props) {
         </dl>
       </header>
 
-      <PickDetailTabs pick={pick} locked={locked} api={detailApi} />
+      <PickDetailTabs pick={pick} locked={locked} />
     </article>
   );
 }

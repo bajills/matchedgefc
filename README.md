@@ -6,7 +6,7 @@ Production-ready marketing + picks site: **Next.js 14 (App Router)**, **Tailwind
 
 | Path | Purpose |
 |------|---------|
-| `app/` | Pages and API routes (`layout.tsx`, `page.tsx`, `api/checkout`) |
+| `app/` | Pages and API routes (`layout.tsx`, `page.tsx`, `api/checkout`, `api/picks/[id]/context`, …) |
 | `components/` | UI sections (Hero, Picks, Pricing, Footer, …) |
 | `lib/` | Supabase client + data loaders (`getPicks`, `getSportRecords`) |
 | `supabase/schema.sql` | Tables + RLS for public read |
@@ -40,7 +40,8 @@ Fill in:
 
 - **`NEXT_PUBLIC_SITE_URL`** — Your production URL, e.g. `https://matchedgefc.com` (use `http://localhost:3000` locally).
 - **Supabase** — Create a project at [supabase.com](https://supabase.com). In **Project Settings → API**, copy **URL** and **anon public** key.
-- **Stripe** — [Dashboard](https://dashboard.stripe.com): create a **Product** “Edge” with a **$15/month** recurring **Price**. Copy **Price ID** (`price_...`). Add **Secret key** to `STRIPE_SECRET_KEY`. Optional: `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` for future client-side Stripe.js.
+- **Stripe** — [Dashboard](https://dashboard.stripe.com): create a **Product** “Edge” with a **$9/month** founding recurring **Price**. Copy **Price ID** (`price_...`). Add **Secret key** to `STRIPE_SECRET_KEY`. Optional: `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` for future client-side Stripe.js.
+- **`API_FOOTBALL_KEY`** — [API-Football](https://www.api-football.com/) (api-sports.io). Used only on the **server** by `/api/picks/[id]/context` and `/api/picks/[id]/live` (never prefix with `NEXT_PUBLIC_`). Same key as the root `mathedge.py` pipeline if you use it.
 
 ## 4. Supabase database
 
@@ -64,6 +65,7 @@ Open [http://localhost:3000](http://localhost:3000).
 2. Import the project in [vercel.com](https://vercel.com).
 3. Set **Root Directory** to `matchedgefc` if the repo contains other folders.
 4. Add the same env vars as **.env.local** in Vercel **Settings → Environment Variables**.
+   - **`API_FOOTBALL_KEY`**: add as a **server** secret (Production / Preview / Development as needed). Do **not** expose it to the browser — no `NEXT_PUBLIC_` prefix. Without it, pick detail tabs (H2H, Team news, Stats) and live scores show a configuration message instead of API data.
 5. Add your domain **matchedgefc.com** under **Domains** and point DNS per Vercel’s instructions.
 
 ## 7. Stripe webhooks (optional, for membership features)

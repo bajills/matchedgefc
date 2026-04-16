@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { PickRow } from "@/lib/types";
-import type { PickDetailApiPayload } from "@/lib/pick-detail-data";
+import type { PickDetailContextResponse } from "@/lib/pick-detail-data";
 import { americanToImpliedPercent, devigTwoWay, devigThreeWay } from "@/lib/odds-implied";
 import { OddsWithMovement } from "./OddsWithMovement";
 
@@ -18,11 +18,42 @@ const TABS = [
 type Props = {
   pick: PickRow;
   locked: boolean;
-  api: PickDetailApiPayload;
 };
 
-export function PickDetailTabs({ pick, locked, api }: Props) {
+export function PickDetailTabs({ pick, locked }: Props) {
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("pick");
+  const [ctx, setCtx] = useState<PickDetailContextResponse | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/picks/${pick.id}/context`, { cache: "no-store" })
+      .then((r) => r.json() as Promise<PickDetailContextResponse>)
+      .then((data) => {
+        if (!cancelled) {
+          setCtx({
+            h2h: data.h2h ?? [],
+            injuries: data.injuries ?? [],
+            stats: data.stats ?? { kind: "none", message: "Statistics unavailable." },
+            resolved: data.resolved ?? false,
+            error: data.error,
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCtx({
+            h2h: [],
+            injuries: [],
+            stats: { kind: "none", message: "Could not load match data." },
+            resolved: false,
+            error: "fetch_failed",
+          });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pick.id]);
 
   return (
     <div className="relative mt-10 min-h-[200px]">
@@ -58,9 +89,9 @@ export function PickDetailTabs({ pick, locked, api }: Props) {
         aria-hidden={locked}
       >
         {tab === "pick" && <PickTab pick={pick} />}
-        {tab === "h2h" && <H2HTab rows={api.h2h} />}
-        {tab === "news" && <NewsTab rows={api.injuries} />}
-        {tab === "stats" && <StatsTab payload={api.stats} />}
+        {tab === "h2h" && <H2HTab ctx={ctx} />}
+        {tab === "news" && <NewsTab ctx={ctx} />}
+        {tab === "stats" && <StatsTab ctx={ctx} />}
         {tab === "odds" && <OddsTab pick={pick} />}
       </div>
 
@@ -111,7 +142,22 @@ function PickTab({ pick }: { pick: PickRow }) {
   );
 }
 
-function H2HTab({ rows }: { rows: PickDetailApiPayload["h2h"] }) {
+function tabErrorMessage(ctx: PickDetailContextResponse | null): string | null {
+  if (!ctx?.error || ctx.stats.kind !== "none") {
+    return null;
+  }
+  return ctx.stats.message || null;
+}
+
+function H2HTab({ ctx }: { ctx: PickDetailContextResponse | null }) {
+  if (ctx == null) {
+    return <p className="mt-6 text-sm text-[var(--muted)]">Loading…</p>;
+  }
+  const err = tabErrorMessage(ctx);
+  if (err) {
+    return <p className="mt-6 text-sm text-[var(--muted)]">{err}</p>;
+  }
+  const rows = ctx.h2h;
   if (!rows.length) {
     return (
       <p className="mt-6 text-sm text-[var(--muted)]">No head-to-head history available for this fixture.</p>
@@ -145,7 +191,15 @@ function H2HTab({ rows }: { rows: PickDetailApiPayload["h2h"] }) {
   );
 }
 
-function NewsTab({ rows }: { rows: PickDetailApiPayload["injuries"] }) {
+function NewsTab({ ctx }: { ctx: PickDetailContextResponse | null }) {
+  if (ctx == null) {
+    return <p className="mt-6 text-sm text-[var(--muted)]">Loading…</p>;
+  }
+  const err = tabErrorMessage(ctx);
+  if (err) {
+    return <p className="mt-6 text-sm text-[var(--muted)]">{err}</p>;
+  }
+  const rows = ctx.injuries;
   if (!rows.length) {
     return <p className="mt-6 text-sm text-[var(--muted)]">No injury news available</p>;
   }
@@ -167,7 +221,11 @@ function NewsTab({ rows }: { rows: PickDetailApiPayload["injuries"] }) {
   );
 }
 
-function StatsTab({ payload }: { payload: PickDetailApiPayload["stats"] }) {
+function StatsTab({ ctx }: { ctx: PickDetailContextResponse | null }) {
+  if (ctx == null) {
+    return <p className="mt-6 text-sm text-[var(--muted)]">Loading…</p>;
+  }
+  const payload = ctx.stats;
   if (payload.kind === "none") {
     return <p className="mt-6 text-sm text-[var(--muted)]">{payload.message}</p>;
   }

@@ -38,6 +38,13 @@ export type PickDetailApiPayload = {
   resolved: boolean;
 };
 
+/** Subset of tabs for `/api/picks/[id]/context?tab=` — fetch only that block after fixture resolve. */
+export type PickContextTab = "h2h" | "team-news" | "stats";
+
+export type PickDetailContextResponse = PickDetailApiPayload & {
+  error?: string;
+};
+
 const FINISHED = new Set(["FT", "AET", "PEN"]);
 
 function utcDay(iso: string): string {
@@ -234,7 +241,15 @@ function formatStatVal(v: unknown): string {
   return String(v);
 }
 
-export async function loadPickDetailApiData(pick: PickRow): Promise<PickDetailApiPayload> {
+/**
+ * Server-only: loads H2H / injuries / stats from API-Football (uses `API_FOOTBALL_KEY`).
+ * Call from Route Handlers or other server code — not from client bundles.
+ * @param tab If set, only fetches that section (after resolving the fixture once).
+ */
+export async function fetchPickDetailContext(
+  pick: PickRow,
+  tab?: PickContextTab,
+): Promise<PickDetailContextResponse> {
   const empty: PickDetailApiPayload = {
     h2h: [],
     injuries: [],
@@ -245,7 +260,11 @@ export async function loadPickDetailApiData(pick: PickRow): Promise<PickDetailAp
   if (pick.sport !== "soccer" || !process.env.API_FOOTBALL_KEY?.trim()) {
     return {
       ...empty,
-      stats: { kind: "none", message: "API-Football is not configured for this pick." },
+      stats: {
+        kind: "none",
+        message: "API-Football is not configured for this pick.",
+      },
+      error: "api_football_unconfigured",
     };
   }
 
@@ -258,7 +277,11 @@ export async function loadPickDetailApiData(pick: PickRow): Promise<PickDetailAp
     if (!fx) {
       return {
         ...empty,
-        stats: { kind: "none", message: "Could not match this pick to an API-Football fixture." },
+        stats: {
+          kind: "none",
+          message: "Could not match this pick to an API-Football fixture.",
+        },
+        error: "fixture_unmatched",
       };
     }
 
@@ -271,101 +294,116 @@ export async function loadPickDetailApiData(pick: PickRow): Promise<PickDetailAp
     const b = Math.max(hid, aid);
     const st = fx.fixture.status?.short || "";
 
+    const needH2h = tab == null || tab === "h2h";
+    const needNews = tab == null || tab === "team-news";
+    const needStats = tab == null || tab === "stats";
+
     const h2hKey = `h2h:${a}-${b}:5`;
     const injFixKey = `injuries:fx:${fixtureId}`;
     const statFixKey = `stats:fixture:${fixtureId}`;
     const statHomeKey = `stats:team:${hid}:${lid}:${season}`;
     const statAwayKey = `stats:team:${aid}:${lid}:${season}`;
 
-    const h2hP = fetchApiFootballCached(
-      "/fixtures/headtohead",
-      { h2h: `${a}-${b}`, last: "5" },
-      h2hKey,
-    );
-    const injFixP = fetchApiFootballCached(
-      "/injuries",
-      { fixture: String(fixtureId) },
-      injFixKey,
-    );
-
     const finished = FINISHED.has(st);
-    const statsP = finished
-      ? fetchApiFootballCached("/fixtures/statistics", { fixture: String(fixtureId) }, statFixKey)
-      : Promise.all([
-          fetchApiFootballCached(
-            "/teams/statistics",
-            { team: String(hid), league: String(lid), season: String(season) },
-            statHomeKey,
-          ),
-          fetchApiFootballCached(
-            "/teams/statistics",
-            { team: String(aid), league: String(lid), season: String(season) },
-            statAwayKey,
-          ),
-        ]);
 
-    const [h2hRaw, injRaw, statsRaw] = await Promise.all([h2hP, injFixP, statsP]);
+    let h2hRaw: unknown = { response: [] };
+    let injRaw: unknown = { response: [] };
+    let statsRaw: unknown | [unknown, unknown] = [{ response: {} }, { response: {} }];
 
-    const h2h = parseHeadToHead(
-      h2hRaw,
-      fx.teams.home.name,
-      fx.teams.away.name,
-    );
+    if (needH2h || needNews || needStats) {
+      const h2hP = needH2h
+        ? fetchApiFootballCached(
+            "/fixtures/headtohead",
+            { h2h: `${a}-${b}`, last: "5" },
+            h2hKey,
+          )
+        : Promise.resolve({ response: [] });
+      const injFixP = needNews
+        ? fetchApiFootballCached("/injuries", { fixture: String(fixtureId) }, injFixKey)
+        : Promise.resolve({ response: [] });
+      const statsP =
+        needStats && finished
+          ? fetchApiFootballCached("/fixtures/statistics", { fixture: String(fixtureId) }, statFixKey)
+          : needStats && !finished
+            ? Promise.all([
+                fetchApiFootballCached(
+                  "/teams/statistics",
+                  { team: String(hid), league: String(lid), season: String(season) },
+                  statHomeKey,
+                ),
+                fetchApiFootballCached(
+                  "/teams/statistics",
+                  { team: String(aid), league: String(lid), season: String(season) },
+                  statAwayKey,
+                ),
+              ])
+            : Promise.resolve(null);
 
-    let injuries = parseInjuriesResponse(
-      injRaw,
-      fx.teams.home.name,
-      fx.teams.away.name,
-    );
-    if (injuries.length === 0) {
-      const injH = await fetchApiFootballCached(
-        "/injuries",
-        {
-          team: String(hid),
-          league: String(lid),
-          season: String(season),
-        },
-        `injuries:team:${hid}:${lid}:${season}`,
-      );
-      const injA = await fetchApiFootballCached(
-        "/injuries",
-        {
-          team: String(aid),
-          league: String(lid),
-          season: String(season),
-        },
-        `injuries:team:${aid}:${lid}:${season}`,
-      );
-      injuries = [
-        ...parseInjuriesResponse(injH, fx.teams.home.name, fx.teams.away.name),
-        ...parseInjuriesResponse(injA, fx.teams.home.name, fx.teams.away.name),
-      ];
+      const results = await Promise.all([h2hP, injFixP, statsP]);
+      h2hRaw = results[0];
+      injRaw = results[1];
+      statsRaw = results[2] ?? statsRaw;
     }
-    const injSeen = new Set<string>();
-    injuries = injuries.filter((row) => {
-      const k = `${row.player.toLowerCase()}|${row.team.toLowerCase()}`;
-      if (injSeen.has(k)) {
-        return false;
-      }
-      injSeen.add(k);
-      return true;
-    });
 
-    let stats: StatsTabPayload;
-    if (finished) {
-      const matchStats = parseFixtureMatchStats(statsRaw as unknown);
-      stats =
-        matchStats.kind === "match" && matchStats.rows.length > 0
-          ? matchStats
-          : { kind: "none", message: "Match statistics not available." };
-    } else {
-      const [homeS, awayS] = statsRaw as [unknown, unknown];
-      const home = seasonSummaryForTeam(homeS, fx.teams.home.name);
-      const away = seasonSummaryForTeam(awayS, fx.teams.away.name);
-      if (home.rows.length === 0 && away.rows.length === 0) {
-        stats = { kind: "none", message: "Season statistics not available." };
+    const h2h = needH2h
+      ? parseHeadToHead(h2hRaw, fx.teams.home.name, fx.teams.away.name)
+      : [];
+
+    let injuries: InjuryRow[] = [];
+    if (needNews) {
+      injuries = parseInjuriesResponse(injRaw, fx.teams.home.name, fx.teams.away.name);
+      if (injuries.length === 0) {
+        const injH = await fetchApiFootballCached(
+          "/injuries",
+          {
+            team: String(hid),
+            league: String(lid),
+            season: String(season),
+          },
+          `injuries:team:${hid}:${lid}:${season}`,
+        );
+        const injA = await fetchApiFootballCached(
+          "/injuries",
+          {
+            team: String(aid),
+            league: String(lid),
+            season: String(season),
+          },
+          `injuries:team:${aid}:${lid}:${season}`,
+        );
+        injuries = [
+          ...parseInjuriesResponse(injH, fx.teams.home.name, fx.teams.away.name),
+          ...parseInjuriesResponse(injA, fx.teams.home.name, fx.teams.away.name),
+        ];
+      }
+      const injSeen = new Set<string>();
+      injuries = injuries.filter((row) => {
+        const k = `${row.player.toLowerCase()}|${row.team.toLowerCase()}`;
+        if (injSeen.has(k)) {
+          return false;
+        }
+        injSeen.add(k);
+        return true;
+      });
+    }
+
+    let stats: StatsTabPayload = empty.stats;
+    if (needStats) {
+      if (finished) {
+        const matchStats = parseFixtureMatchStats(statsRaw as unknown);
+        stats =
+          matchStats.kind === "match" && matchStats.rows.length > 0
+            ? matchStats
+            : { kind: "none", message: "Match statistics not available." };
       } else {
-        stats = { kind: "season", home, away };
+        const [homeS, awayS] = statsRaw as [unknown, unknown];
+        const home = seasonSummaryForTeam(homeS, fx.teams.home.name);
+        const away = seasonSummaryForTeam(awayS, fx.teams.away.name);
+        if (home.rows.length === 0 && away.rows.length === 0) {
+          stats = { kind: "none", message: "Season statistics not available." };
+        } else {
+          stats = { kind: "season", home, away };
+        }
       }
     }
 
@@ -379,6 +417,7 @@ export async function loadPickDetailApiData(pick: PickRow): Promise<PickDetailAp
     return {
       ...empty,
       stats: { kind: "none", message: "Could not load match data." },
+      error: "fetch_failed",
     };
   }
 }
