@@ -14,6 +14,9 @@ export function Header() {
           <Link href="/#pricing" className="transition hover:text-white">
             Pricing
           </Link>
+          <Link href="/workout" className="transition hover:text-white">
+            Workout
+          </Link>
         </nav>
         <div className="flex items-center justify-end gap-4">
           <nav className="flex gap-6 text-sm font-medium text-[var(--muted)] lg:hidden">
@@ -22,6 +25,9 @@ export function Header() {
             </Link>
             <Link href="/#pricing" className="transition hover:text-white">
               Pricing
+            </Link>
+            <Link href="/workout" className="transition hover:text-white">
+              Workout
             </Link>
           </nav>
           <Link
