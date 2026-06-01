@@ -21,6 +21,15 @@ export const metadata: Metadata = {
   description:
     "Best bets and prop picks across every major soccer league — every matchday, one place.",
   metadataBase: new URL("https://matchedgefc.com"),
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "My Workout",
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
   openGraph: {
     title: "MatchEdge FC",
     description: "The research. Done for you. That's MatchEdge.",
